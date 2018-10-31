@@ -1,10 +1,14 @@
 from flask import Flask
 from flask_restful import Api, Resource
 
+from settings import SECRET_KEY
 from model import User, Post, Topic, Comment
 from flask.json import JSONEncoder
 
 from flask_restful import reqparse
+import jwt
+
+import datetime
 
 
 class Config(object):
@@ -26,6 +30,29 @@ parser.add_argument("query", type=str, help="Query must be a string")
 parser.add_argument("topic", type=str, help="Topic must be a string")
 parser.add_argument("description", type=str, help="Description must be a "
                                                   "string")
+parser.add_argument("token", type=str, help="Token must be a string")
+
+
+def auth(f):
+    def f_with_user_id(*args, **kwargs):
+        fields = parser.parse_args()
+        msg = None
+        try:
+            payload = jwt.decode(fields['token'], key=SECRET_KEY)
+            user_id = payload['sub']
+
+        except Exception as e:
+            user_id = None
+            msg = str(e)
+        if user_id is None:
+            return {
+                'success': False,
+                'message': msg
+            }
+        else:
+            return f(*args, user_id=user_id, **kwargs)
+
+    return f_with_user_id
 
 
 class UserAPI(Resource):
@@ -85,10 +112,11 @@ class PostListAPI(Resource):
     def get(self):
         return Post.fetch_all()
 
-    def post(self):
+    @auth
+    def post(self, user_id):
         args = parser.parse_args()
         try:
-            modified = Post.create(args)
+            modified = Post.create(user_id, args)
             return dict(success=modified > 0)
         except Exception as e:
             return dict(success=False, message=str(e))
@@ -160,6 +188,31 @@ class CommentAPI(Resource):
             return dict(success=False, message=str(e))
 
 
+class AuthAPI(Resource):
+    def post(self):
+        args = parser.parse_args()
+        try:
+            user_id = User.auth(args)
+            if user_id is None:
+                return dict(success=False,
+                            message="Incorrect username or password")
+            payload = {
+                'exp': datetime.datetime.utcnow() + \
+                       datetime.timedelta(days=1),
+                'iat': datetime.datetime.utcnow(),
+                'sub': user_id
+            }
+            return dict(success=True,
+                        token=jwt.encode(
+                            payload,
+                            SECRET_KEY,
+                            algorithm='HS256'
+                        ).decode('utf-8'))
+
+        except Exception as e:
+            return dict(success=False, message=str(e))
+
+
 api.add_resource(UserListAPI, '/users')
 api.add_resource(PostListAPI, '/posts')
 api.add_resource(PostCommentsAPI, '/post-comments/<int:post_id>')
@@ -168,3 +221,4 @@ api.add_resource(UserAPI, '/users/<int:id>')
 api.add_resource(UserSearchAPI, '/searchusers')
 api.add_resource(TopicListAPI, '/topics')
 api.add_resource(TopicAPI, '/topics/<int:topic_id>')
+api.add_resource(AuthAPI, '/auth')

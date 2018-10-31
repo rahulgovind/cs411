@@ -2,7 +2,7 @@
 CREATE TABLE users (
 	   user_id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 	   username VARCHAR(40) NOT NULL,
-	   password VARCHAR(40) NOT NULL,
+	   password CHAR(60) NOT NULL,
 	   bio TEXT,
 	   join_date TIMESTAMP NOT NULL
 );
@@ -35,6 +35,7 @@ CREATE TABLE topics (
 
 CREATE TABLE quizzes (
 	   quiz_id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+	   title VARCHAR(255) NOT NULL,
 	   description TEXT
 );
 

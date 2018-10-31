@@ -1,5 +1,7 @@
-from db import fetch, execute, update, delete, fit, select, insert
+from db import fetch, execute, update, delete, fit, select, insert, \
+    get_connector
 from MySQLdb import escape_string as mysql_escape_string
+import bcrypt
 
 
 def quote_string(s):
@@ -10,7 +12,8 @@ def quote_string(s):
 
 
 def escape_string(s):
-    return str(s)
+    conn = get_connector()
+    return mysql_escape_string(s).decode('utf-8')
 
 
 class User(object):
@@ -30,11 +33,26 @@ class User(object):
             return None
 
     @staticmethod
+    def auth(fields):
+        result = select(table='users',
+                        columns=('user_id', 'username', 'password'),
+                        condition="username=%s" %
+                                  quote_string(fields['username']))
+        if len(result) > 0:
+            if bcrypt.checkpw(fields['password'].encode('utf-8'),
+                              result[0]['password'].encode('utf-8')):
+                return result[0]['user_id']
+        return None
+
+    @staticmethod
     def create(fields):
+
+        pwd = bcrypt.hashpw(fields['password'].encode('utf-8'),
+                            bcrypt.gensalt(14))
         return insert(table='users',
                       columns=['username', 'password', 'bio'],
                       values=[quote_string(fields['username']),
-                              quote_string(fields['password']),
+                              quote_string(pwd),
                               quote_string(fields['bio'])])
 
     @staticmethod
@@ -42,6 +60,11 @@ class User(object):
         attrs = ['username', 'password', 'bio']
         nonnull = [attr for attr in attrs if fields[attr] is not None]
 
+        if 'password' in attrs:
+            fields['password'] = bcrypt.hashpw(
+                fields['password'].encode('utf-8)'),
+                bcrypt.gensalt(14)
+            )
         return update(table='users',
                       columns=[attr for attr in nonnull],
                       values=[quote_string(fields[attr]) for attr in nonnull],
@@ -84,9 +107,10 @@ class Post(object):
                       condition='post_id=%d' % post_id)
 
     @staticmethod
-    def create(fields):
+    def create(user_id, fields):
+        print(user_id)
         return execute("INSERT INTO posts(user_id, content, title) "
-                       "VALUES(%d, %s, %s)" % (fields['user_id'],
+                       "VALUES(%d, %s, %s)" % (user_id,
                                                quote_string(fields['content']),
                                                quote_string(fields['title'])))
 
@@ -166,3 +190,27 @@ class Topic(object):
     @staticmethod
     def delete(topic_id):
         return delete(table='topics', condition="topic_id=%d" % topic_id)
+
+
+class Quiz(object):
+    @staticmethod
+    def fetch_all():
+        return select(table='quizzes',
+                      columns=('quiz_id', 'title', 'description'))
+
+    @staticmethod
+    def find(quiz_id):
+        result = select(table='quiz',
+                        columns=('quiz_id', 'topic', 'description'),
+                        condition='quiz_id=%d' % quiz_id)
+        if len(result) > 0:
+            return result[0]
+        else:
+            return None
+
+    @staticmethod
+    def create(fields):
+        return insert(table="quizzes",
+                      columns=("title", "description"),
+                      values=[quote_string(fields['topic']),
+                              quote_string(fields['description'])])
