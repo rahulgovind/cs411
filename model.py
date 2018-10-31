@@ -10,7 +10,7 @@ def quote_string(s):
 
 
 def escape_string(s):
-    return s
+    return str(s)
 
 
 class User(object):
@@ -118,16 +118,16 @@ class Comment(object):
             return None
 
     @staticmethod
-    def create(fields):
+    def create(post_id, fields):
         return insert(table='comments',
                       columns=['content', 'user_id', 'post_id'],
                       values=[quote_string(fields['content']),
                               quote_string(fields['user_id']),
-                              quote_string(fields['post_id'])])
+                              str(post_id)])
 
     @staticmethod
     def update(post_id, fields):
-        attrs = ['content', 'user_id', 'post_id']
+        attrs = ['content']
         nonnull = [attr for attr in attrs if fields[attr] is not None]
 
         return update(table='comments',
