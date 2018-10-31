@@ -1,5 +1,4 @@
-from db import fetch, execute, update, delete, fit, select, insert, \
-    get_connector
+from db import fetch, execute, update, delete, fit, select, insert
 from MySQLdb import escape_string as mysql_escape_string
 import bcrypt
 
@@ -12,7 +11,6 @@ def quote_string(s):
 
 
 def escape_string(s):
-    conn = get_connector()
     return mysql_escape_string(s).decode('utf-8')
 
 
@@ -107,10 +105,9 @@ class Post(object):
                       condition='post_id=%d' % post_id)
 
     @staticmethod
-    def create(user_id, fields):
-        print(user_id)
+    def create(fields):
         return execute("INSERT INTO posts(user_id, content, title) "
-                       "VALUES(%d, %s, %s)" % (user_id,
+                       "VALUES(%d, %s, %s)" % (fields['user_id'],
                                                quote_string(fields['content']),
                                                quote_string(fields['title'])))
 

@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_restful import Api, Resource
 
-from settings import SECRET_KEY
+from settings import SECRET_KEY, AUTH_ENABLED
 from model import User, Post, Topic, Comment
 from flask.json import JSONEncoder
 
@@ -40,17 +40,17 @@ def auth(f):
         try:
             payload = jwt.decode(fields['token'], key=SECRET_KEY)
             user_id = payload['sub']
-
+            assert (user_id == fields['user_id'])
         except Exception as e:
             user_id = None
             msg = str(e)
-        if user_id is None:
+        if user_id is None and AUTH_ENABLED is True:
             return {
                 'success': False,
                 'message': msg
             }
         else:
-            return f(*args, user_id=user_id, **kwargs)
+            return f(*args, **kwargs)
 
     return f_with_user_id
 
@@ -113,10 +113,10 @@ class PostListAPI(Resource):
         return Post.fetch_all()
 
     @auth
-    def post(self, user_id):
+    def post(self):
         args = parser.parse_args()
         try:
-            modified = Post.create(user_id, args)
+            modified = Post.create(args)
             return dict(success=modified > 0)
         except Exception as e:
             return dict(success=False, message=str(e))
@@ -203,6 +203,7 @@ class AuthAPI(Resource):
                 'sub': user_id
             }
             return dict(success=True,
+                        user_id=user_id,
                         token=jwt.encode(
                             payload,
                             SECRET_KEY,
