@@ -138,3 +138,31 @@ class Comment(object):
     @staticmethod
     def delete(post_id):
         return delete(table='comments', condition="comment_id=%d" % post_id)
+
+
+class Topic(object):
+    @staticmethod
+    def fetch_all():
+        return select(table='topics',
+                      columns=('topic_id', 'topic', 'description'))
+
+    @staticmethod
+    def find(topic_id):
+        result = select(table='topics',
+                        columns=('topic_id', 'topic', 'description'),
+                        condition='topic_id=%d' % topic_id)
+        if len(result) > 0:
+            return result[0]
+        else:
+            return None
+
+    @staticmethod
+    def create(fields):
+        return insert(table="topics",
+                      columns=("topic", "description"),
+                      values=[quote_string(fields['topic']),
+                              quote_string(fields['description'])])
+
+    @staticmethod
+    def delete(topic_id):
+        return delete(table='topics', condition="topic_id=%d" % topic_id)
