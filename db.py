@@ -46,6 +46,7 @@ def fetch(query):
     :param query: string
     :return: generator
     """
+    print("Fetch Query: ", query)
     conn = get_connector()
     cursor = conn.cursor()
     cursor.execute(query)

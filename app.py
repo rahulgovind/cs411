@@ -22,6 +22,8 @@ app.config.from_object(Config)
 parser = reqparse.RequestParser()
 parser.add_argument("user_id", type=int, help="user_id must be an integer")
 parser.add_argument("topic_id", type=int, help="topic_id must be an integer")
+parser.add_argument("follows_id", type=int,
+                    help="topic_id must be an integer")
 parser.add_argument('username', type=str, help='Username must be a string')
 parser.add_argument('bio', type=str, help="Bio must be a string")
 parser.add_argument("password", type=str, help="Password must be a string")
@@ -241,6 +243,32 @@ class TopicPosts(Resource):
         return Topic.fetch_posts(topic_id)
 
 
+class FollowsAPI(Resource):
+    def get(self, user_id):
+        return User.following(user_id)
+
+    def post(self, user_id):
+        args = parser.parse_args()
+        try:
+            modified = User.follow(user_id, args['follows_id'])
+            return dict(success=modified > 0)
+        except Exception as e:
+            return dict(success=False, message=str(e))
+
+    def delete(self, user_id):
+        args = parser.parse_args()
+        try:
+            modified = Post.delete_topic(user_id, args['follows_id'])
+            return dict(success=modified > 0)
+        except Exception as e:
+            return dict(success=False, message=str(e))
+
+
+class FollowersAPI(Resource):
+    def get(self, user_id):
+        return User.followers(user_id)
+
+
 api.add_resource(UserListAPI, '/users')
 api.add_resource(PostListAPI, '/posts')
 api.add_resource(PostCommentsAPI, '/post-comments/<int:post_id>')
@@ -252,3 +280,5 @@ api.add_resource(TopicAPI, '/topics/<int:topic_id>')
 api.add_resource(AuthAPI, '/auth')
 api.add_resource(PostTopics, '/post-topics/<int:post_id>')
 api.add_resource(TopicPosts, '/topic-posts/<int:topic_id>')
+api.add_resource(FollowsAPI, '/follows/<int:user_id>')
+api.add_resource(FollowersAPI, '/followers/<int:user_id>')

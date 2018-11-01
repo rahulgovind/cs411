@@ -79,6 +79,41 @@ class User(object):
             % escape_string(query)),
             ('user_id', 'username'))
 
+    # User follows relations
+    @staticmethod
+    def follow(user_id, follows_id):
+        return insert(table='followers',
+                      columns=['follower_id', 'follows_id'],
+                      values=[user_id, follows_id])
+
+    @staticmethod
+    def unfollow(user_id, args):
+        return delete(table="followers",
+                      condition="follower_id={} AND follows_id={}".format(
+                          user_id, args['following_id']
+                      ))
+
+    @staticmethod
+    def following(user_id):
+        return fit(fetch("""SELECT u2.user_id,u2.username
+                        FROM users u1
+                        JOIN followers f ON u1.user_id=f.follower_id
+                                            AND u1.user_id={}
+                        JOIN users u2 ON f.follows_id=u2.user_id
+                        """.format(user_id)),
+                   ('user_id', 'username'))
+
+    @staticmethod
+    def followers(user_id):
+        return fit(fetch("""
+                        SELECT u2.user_id,u2.username
+                        FROM users u1
+                        JOIN followers f ON u1.user_id=f.follows_id
+                                            AND u1.user_id={}
+                        JOIN users u2 ON f.follower_id=u2.user_id
+                        """.format(user_id)),
+                   ('user_id', 'username'))
+
 
 class Post(object):
     @staticmethod
