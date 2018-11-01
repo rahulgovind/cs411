@@ -195,18 +195,18 @@ class AuthAPI(Resource):
     def post(self):
         args = parser.parse_args()
         try:
-            user_id = User.auth(args)
-            if user_id is None:
+            user = User.auth(args)
+            if user is None:
                 return dict(success=False,
                             message="Incorrect username or password")
             payload = {
                 'exp': datetime.datetime.utcnow() + \
                        datetime.timedelta(days=1),
                 'iat': datetime.datetime.utcnow(),
-                'sub': user_id
+                'sub': user['user_id']
             }
             return dict(success=True,
-                        user_id=user_id,
+                        user=user,
                         token=jwt.encode(
                             payload,
                             SECRET_KEY,

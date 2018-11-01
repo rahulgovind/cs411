@@ -39,7 +39,8 @@ class User(object):
         if len(result) > 0:
             if bcrypt.checkpw(fields['password'].encode('utf-8'),
                               result[0]['password'].encode('utf-8')):
-                return result[0]['user_id']
+                del result[0]['password']
+                return result[0]
         return None
 
     @staticmethod
