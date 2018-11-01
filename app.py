@@ -118,7 +118,6 @@ class PostListAPI(Resource):
     def get(self):
         return Post.fetch_all()
 
-    @auth
     def post(self):
         args = parser.parse_args()
         try:
