@@ -93,7 +93,7 @@ def update(table, columns, values, condition):
 
 def insert(table, columns, values):
     colstr = ",".join(columns)
-    valstr = ",".join(values)
+    valstr = ",".join(str(_) for _ in values)
 
     query = "INSERT INTO %s(%s) VALUES (%s)" % (table, colstr, valstr)
     return execute(query)

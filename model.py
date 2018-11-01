@@ -113,7 +113,7 @@ class Post(object):
 
     @staticmethod
     def update(post_id, fields):
-        attrs = ['content', 'user_id', 'title']
+        attrs = ['content', 'title']
         nonnull = [attr for attr in attrs if fields[attr] is not None]
 
         return update(table='posts',
@@ -124,6 +124,29 @@ class Post(object):
     @staticmethod
     def delete(post_id):
         return delete(table='posts', condition="post_id=%d" % post_id)
+
+    @staticmethod
+    def fetch_topics(post_id):
+        return fit(fetch("""SELECT t.topic_id, t.topic, t.description
+                            FROM posts p
+                            JOIN post_topic pt
+                            ON p.post_id = pt.post_id AND p.post_id={}
+                            JOIN topics t
+                            ON pt.topic_id = t.topic_id""".format(post_id)),
+                   ('topic_id', 'topic', 'description'))
+
+    @staticmethod
+    def add_topic(post_id, fields):
+        return insert(table='post_topic',
+                      columns=['topic_id', 'post_id'],
+                      values=[fields['topic_id'], post_id])
+
+    @staticmethod
+    def delete_topic(post_id, topic_id):
+        return delete(table='post_topic',
+                      condition='post_id={} AND topic_id={}'.format(
+                          post_id,
+                          topic_id))
 
 
 class Comment(object):
@@ -187,6 +210,18 @@ class Topic(object):
     @staticmethod
     def delete(topic_id):
         return delete(table='topics', condition="topic_id=%d" % topic_id)
+
+    # Posts and Topics
+    @staticmethod
+    def fetch_posts(topic_id):
+        return fit(fetch("""SELECT p.post_id,p.title,p.content,p.user_id
+                            FROM topics t
+                            JOIN post_topic pt
+                            ON t.topic_id = pt.topic_id
+                            AND t.topic_id={}
+                            JOIN posts p
+                            ON pt.post_id=p.post_id""".format(topic_id)),
+                   ('post_id', 'title', 'content', 'user_id'))
 
 
 class Quiz(object):

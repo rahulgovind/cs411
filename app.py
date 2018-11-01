@@ -21,6 +21,7 @@ app.config.from_object(Config)
 
 parser = reqparse.RequestParser()
 parser.add_argument("user_id", type=int, help="user_id must be an integer")
+parser.add_argument("topic_id", type=int, help="topic_id must be an integer")
 parser.add_argument('username', type=str, help='Username must be a string')
 parser.add_argument('bio', type=str, help="Bio must be a string")
 parser.add_argument("password", type=str, help="Password must be a string")
@@ -214,6 +215,32 @@ class AuthAPI(Resource):
             return dict(success=False, message=str(e))
 
 
+class PostTopics(Resource):
+    def get(self, post_id):
+        return Post.fetch_topics(post_id)
+
+    def post(self, post_id):
+        args = parser.parse_args()
+        try:
+            modified = Post.add_topic(post_id, args)
+            return dict(success=modified > 0)
+        except Exception as e:
+            return dict(success=False, message=str(e))
+
+    def delete(self, post_id):
+        args = parser.parse_args()
+        try:
+            modified = Post.delete_topic(post_id, args['topic_id'])
+            return dict(success=modified > 0)
+        except Exception as e:
+            return dict(success=False, message=str(e))
+
+
+class TopicPosts(Resource):
+    def get(self, topic_id):
+        return Topic.fetch_posts(topic_id)
+
+
 api.add_resource(UserListAPI, '/users')
 api.add_resource(PostListAPI, '/posts')
 api.add_resource(PostCommentsAPI, '/post-comments/<int:post_id>')
@@ -223,3 +250,5 @@ api.add_resource(UserSearchAPI, '/searchusers')
 api.add_resource(TopicListAPI, '/topics')
 api.add_resource(TopicAPI, '/topics/<int:topic_id>')
 api.add_resource(AuthAPI, '/auth')
+api.add_resource(PostTopics, '/post-topics/<int:post_id>')
+api.add_resource(TopicPosts, '/topic-posts/<int:topic_id>')

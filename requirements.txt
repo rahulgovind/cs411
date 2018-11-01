@@ -2,3 +2,7 @@ python-dotenv
 mysql
 flask
 pyjwt
+mysql
+flask-restful
+mysql-connector
+bcrypt

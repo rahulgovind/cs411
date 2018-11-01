@@ -69,4 +69,13 @@ CREATE TABLE post_quiz (
 	   FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
 	   FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE
 );
+
+CREATE TABLE post_topic (
+	  post_id INT(10) UNSIGNED NOT NULL,
+	  topic_id INT(10) UNSIGNED NOT NULL,
+	  PRIMARY KEY (post_id, topic_id),
+	  FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
+	  FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
+);
+
 ```
