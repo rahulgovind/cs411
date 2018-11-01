@@ -78,4 +78,11 @@ CREATE TABLE post_topic (
 	  FOREIGN KEY (topic_id) REFERENCES topics(topic_id) ON DELETE CASCADE
 );
 
+CREATE TABLE user_likes_post (
+	   user_id INT(10) UNSIGNED NOT NULL,
+	   post_id INT(10) UNSIGNED NOT NULL,
+	   PRIMARY KEY (user_id, post_id),
+	   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+	   FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE
+);
 ```
