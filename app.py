@@ -86,7 +86,10 @@ class UserListAPI(Resource):
         args = parser.parse_args()
         try:
             modified = User.create(args)
-            return dict(success=modified > 0)
+            result = dict(success=modified > 0)
+            if modified:
+                result['user'] = User.find_by_username(args['username'])
+            return result
         except Exception as e:
             return dict(success=False, message=str(e))
 

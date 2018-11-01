@@ -31,6 +31,16 @@ class User(object):
             return None
 
     @staticmethod
+    def find_by_username(username):
+        result = select(table='users',
+                        columns=('user_id', 'username', 'bio', 'join_date'),
+                        condition='username={}'.format(quote_string(username)))
+        if len(result) > 0:
+            return result[0]
+        else:
+            return None
+
+    @staticmethod
     def auth(fields):
         result = select(table='users',
                         columns=('user_id', 'username', 'password'),
