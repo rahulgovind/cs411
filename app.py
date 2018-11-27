@@ -124,8 +124,12 @@ class PostListAPI(Resource):
     def post(self):
         args = parser.parse_args()
         try:
-            modified = Post.create(args)
-            return dict(success=modified > 0)
+            modified, last_id = Post.create(args)
+            result = dict(success=modified > 0)
+            if modified:
+                print(last_id)
+                result['post'] = Post.find(last_id[0]['last_id'])
+            return result
         except Exception as e:
             return dict(success=False, message=str(e))
 

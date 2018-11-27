@@ -156,14 +156,15 @@ class Post(object):
     @staticmethod
     def fetch_all():
         return fit(fetch("SELECT post_id, content, created, user_id, "
-                         "title FROM posts"),
-                   ('post_id', 'content', 'created', 'user_id', 'title'))
+                         "description, title FROM posts"),
+                   ('post_id', 'content', 'created', 'user_id',
+                    'description', 'title'))
 
     @staticmethod
     def find(post_id):
         result = select(table='posts',
                         columns=('post_id', 'content', 'created', 'user_id',
-                                 'title'),
+                                 'title', 'description'),
                         condition='post_id=%d' % post_id)
         if len(result) > 0:
             return result[0]
@@ -178,10 +179,14 @@ class Post(object):
 
     @staticmethod
     def create(fields):
-        return execute("INSERT INTO posts(user_id, content, title) "
-                       "VALUES(%d, %s, %s)" % (fields['user_id'],
-                                               quote_string(fields['content']),
-                                               quote_string(fields['title'])))
+        return (execute("INSERT INTO posts(user_id, content, title, "
+                        "description) "
+                        "VALUES(%d, %s, %s, %s)" % (
+                            int(fields['user_id']),
+                            quote_string(fields['content']),
+                            quote_string(fields['title']),
+                            quote_string(fields['description']))),
+                fit(fetch("SELECT LAST_INSERT_ID()"), ('last_id',)))
 
     @staticmethod
     def update(post_id, fields):
