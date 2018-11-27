@@ -125,6 +125,32 @@ class User(object):
                         """.format(user_id)),
                    ('user_id', 'username'))
 
+    @staticmethod
+    def fetch_like_posts(user_id):
+        """
+        Fetch posts a user likes
+        """
+        return fit(fetch("""SELECT p.post_id,p.title,p.content,p.user_id
+                            FROM users u
+                            JOIN user_likes_post ulp
+                            ON u.user_id = ulp.post_id AND u.user_id={}
+                            JOIN posts p
+                            ON ulp.post_id = p.post_id""".format(user_id)),
+                   ('post_id', 'title', 'content', 'user_id'))
+
+    @staticmethod
+    def add_post_like(user_id, fields):
+        return insert(table='user_likes_post',
+                      columns=['post_id', 'user_id'],
+                      values=[fields['post_id'], user_id])
+
+    @staticmethod
+    def delete_post_like(user_id, post_id):
+        return delete(table='user_likes_post',
+                      condition='user_id={} AND post_id={}'.format(
+                          user_id,
+                          post_id))
+
 
 class Post(object):
     @staticmethod
@@ -193,6 +219,21 @@ class Post(object):
                       condition='post_id={} AND topic_id={}'.format(
                           post_id,
                           topic_id))
+
+    # Users <like> posts
+    @staticmethod
+    def fetch_user_likes(post_id):
+        """
+        Fetch users that like a given post
+        """
+        return fit(fetch("""SELECT u.user_id,u.username
+                            FROM posts p
+                            JOIN user_likes_post ulp
+                            ON p.post_id=ulp.post_id
+                            AND p.post_id={}
+                            JOIN users u
+                            ON ulp.user_id=u.user_id""".format(post_id)),
+                   ('user_id', 'username'))
 
 
 class Comment(object):
