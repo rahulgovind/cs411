@@ -1,7 +1,19 @@
 import mysql.connector
 from settings import DB_DATABASE, DB_HOST, DB_PASSWORD, DB_USERNAME, DB_PORT
+from MySQLdb import escape_string as mysql_escape_string
 
 _db = None
+
+
+def quote_string(s):
+    if s is None:
+        return "NULL"
+    else:
+        return "'" + escape_string(s) + "'"
+
+
+def escape_string(s):
+    return mysql_escape_string(s).decode('utf-8')
 
 
 def to_dict(t, keys):
@@ -38,19 +50,28 @@ def get_connector():
     return _db
 
 
-def fetch(query):
+def fetch(query, multi=False):
     """Executes a query that is expected to return a result
 
     Use for select
 
     :param query: string
+    :param multi: Multiple queries executed inside fetch
     :return: generator
     """
     print("Fetch Query: ", query)
     conn = get_connector()
     cursor = conn.cursor()
-    cursor.execute(query)
-    return cursor.fetchall()
+    if multi:
+        result = None
+        for r in cursor.execute(query, multi=True):
+            if r.with_rows:
+                print(r.statement)
+                result = r.fetchall()
+        return result
+    else:
+        cursor.execute(query)
+        return cursor.fetchall()
 
 
 def execute(query):

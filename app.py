@@ -11,6 +11,8 @@ import jwt
 import datetime
 from flask_cors import CORS
 
+from db import fetch, quote_string, fit
+
 
 class Config(object):
     RESTFUL_JSON = {'cls': JSONEncoder}
@@ -324,6 +326,46 @@ class FollowersAPI(Resource):
         return User.followers(user_id)
 
 
+class SearchAPI(Resource):
+    def get(self):
+        args = parser.parse_args()
+        query = args['query']
+        words = [x.strip() for x in query.split()]
+        word_values = ",".join(["({})".format(quote_string(_))
+                                for _ in words])
+        non_pk_cols = ','.join(['title', 'description', 'content'])
+        r = fetch("""
+            DROP TEMPORARY TABLE IF EXISTS words;
+            DROP TEMPORARY TABLE IF EXISTS words2;
+            CREATE TEMPORARY TABLE words(word VARCHAR(40));
+            CREATE TEMPORARY TABLE words2(word VARCHAR(40));
+            INSERT INTO words VALUES {1};
+            INSERT INTO words2 VALUES {1};
+            SELECT post_id, {0}
+            FROM (
+                SELECT post_id, {0}, word, LOG((SELECT COUNT(*) FROM posts) / (doc_freq + 0.1)) * tf as tf_idf
+                FROM (
+                    SELECT p.post_id, {0}, w.word, IFNULL(doc_freq,0) as doc_freq,
+                           ROUND((LENGTH(p.content) - LENGTH(REPLACE(p.content, w.word, ""))) / LENGTH(w.word)) AS tf
+                    FROM posts p
+                    JOIN words w
+                    LEFT JOIN (
+                         SELECT word, COUNT(*) as doc_freq
+                         FROM posts p, words2 w
+                         WHERE  LOCATE(w.word, p.content) > 0
+                         GROUP BY word
+                         ) AS tf
+                    ON w.word = tf.word
+                ) as d
+            ) AS a
+            GROUP BY post_id
+            ORDER BY MAX(tf_idf) DESC;""".format(non_pk_cols, word_values),
+                  multi=True)
+        return fit(r, ('post_id', 'title', 'description', 'content'))
+
+
+
+
 api.add_resource(UserListAPI, '/users')
 api.add_resource(PostListAPI, '/posts')
 api.add_resource(PostCommentsAPI, '/post-comments/<int:post_id>')
@@ -340,3 +382,4 @@ api.add_resource(FollowsAPI, '/follows/<int:user_id>')
 api.add_resource(FollowersAPI, '/followers/<int:user_id>')
 api.add_resource(UserPostLikes, '/user-post-likes/<int:user_id>')
 api.add_resource(PostUserLikes, '/post-user-likes/<int:post_id>')
+api.add_resource(SearchAPI, '/search')

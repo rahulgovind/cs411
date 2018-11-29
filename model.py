@@ -1,17 +1,6 @@
-from db import fetch, execute, update, delete, fit, select, insert, create
-from MySQLdb import escape_string as mysql_escape_string
+from db import (fetch, execute, update, delete, fit, select, insert, create,
+                quote_string, escape_string)
 import bcrypt
-
-
-def quote_string(s):
-    if s is None:
-        return "NULL"
-    else:
-        return "'" + escape_string(s) + "'"
-
-
-def escape_string(s):
-    return mysql_escape_string(s).decode('utf-8')
 
 
 class User(object):
