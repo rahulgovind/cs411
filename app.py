@@ -361,35 +361,67 @@ class SearchAPI(Resource):
             GROUP BY post_id
             ORDER BY MAX(tf_idf) DESC;""".format(non_pk_cols, word_values),
                   multi=True)
-        return fit(r, ('post_id', 'title', 'description', 'content'))
-
+        posts = fit(r, ('post_id', 'title', 'description', 'content'))
+        for post in posts:
+            post['topics'] = Post.fetch_topics(post['post_id'])
+        return posts
 
 class RecommendationsAPI(Resource):
     def get(self, user_id):
-        return fit(fetch("""SELECT a.post_id, title, description, content
-                FROM (
-                     SELECT p.post_id
-                     FROM followers f
-                     JOIN users u ON f.follows_id=u.user_id AND
-                     f.follower_id={0}
-                     JOIN user_likes_post ulp ON ulp.user_id=f.follows_id
-                     JOIN (
-                          SELECT post_id
-                          FROM posts
-                          WHERE post_id NOT IN (SELECT post_id
-                                FROM user_likes_post ulp2
-                                WHERE ulp2.user_id={0}
-                            )
-                        ) p
-                     ON ulp.post_id=p.post_id
-                     GROUP BY post_id
-                     ORDER BY COUNT(*) DESC
-                ) a
-                JOIN posts p
-                ON a.post_id = p.post_id
-                """.format(user_id)),
-                   ('post_id', 'title', 'description', 'content'))
-
+        r = fit(fetch("""DROP TEMPORARY TABLE IF EXISTS user_counts;
+                    CREATE TEMPORARY TABLE user_counts AS
+                    SELECT u2.user_id,count(*) as cnt
+                    FROM user_likes_post u1
+                    JOIN user_likes_post u2
+                    ON u1.user_id != u2.user_id AND u1.post_id = u2.post_id
+                    WHERE u1.user_id={0}
+                    GROUP BY u2.user_id;
+                    DROP TEMPORARY TABLE IF EXISTS collab_score;
+                    CREATE TEMPORARY TABLE collab_score AS (
+                           SELECT u.post_id, sum(uc.cnt) AS score
+                           FROM user_counts uc
+                           JOIN (
+                                SELECT user_id, post_id
+                                FROM user_likes_post
+                                WHERE post_id NOT IN (
+                                      SELECT post_id
+                                      FROM user_likes_post ulp
+                                      WHERE ulp.user_id = {0}
+                                )
+                           ) u
+                           ON u.user_id = uc.user_id
+                           GROUP BY u.post_id
+                           ORDER BY score DESC
+                    );
+                    DROP TEMPORARY TABLE IF EXISTS follow_score;
+                    CREATE TEMPORARY TABLE follow_score AS (
+                           SELECT post_id, COUNT(*) AS score
+                           FROM followers f
+                           JOIN users u ON f.follows_id=u.user_id AND f.follower_id={0}
+                           JOIN user_likes_post ulp ON ulp.user_id=f.follows_id
+                           WHERE post_id NOT IN (
+                                 SELECT post_id
+                                 FROM user_likes_post ulp2
+                                 WHERE ulp2.user_id={0}
+                           )
+                           GROUP BY post_id
+                           ORDER BY COUNT(*) DESC
+                    );
+                    SELECT p.post_id, title, description, content, total_score FROM (
+                           SELECT a.post_id, 10 * a.score + b.score AS total_score
+                           FROM collab_score a
+                           JOIN follow_score b
+                           ON a.post_id=b.post_id
+                           ORDER BY total_score
+                    ) c
+                    JOIN posts p
+                    ON c.post_id=p.post_id;
+                """.format(user_id), multi=True),
+                   ('post_id', 'title', 'description', 'content',
+                    'total_score'))
+        for row in r:
+            row['total_score'] = int(row['total_score'])
+        return r
 
 api.add_resource(UserListAPI, '/users')
 api.add_resource(PostListAPI, '/posts')
