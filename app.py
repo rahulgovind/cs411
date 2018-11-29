@@ -101,7 +101,10 @@ class UserListAPI(Resource):
 
 class PostAPI(Resource):
     def get(self, post_id):
-        return Post.find(post_id)
+        post = Post.find(post_id)
+        if post is not None:
+            post['topics'] = Post.fetch_topics(post['post_id'])
+        return post
 
     def put(self, post_id):
         args = parser.parse_args()
@@ -131,7 +134,7 @@ class PostListAPI(Resource):
             if modified:
                 result['post'] = Post.find(last_id[0]['last_id'])
                 last_id = last_id[0]['last_id']
-
+                PostList
                 topics = args['topics']
                 topic_obj = []
                 print(topics)
@@ -323,6 +326,7 @@ api.add_resource(PostListAPI, '/posts')
 api.add_resource(PostCommentsAPI, '/post-comments/<int:post_id>')
 api.add_resource(CommentAPI, '/comments/<int:comment_id>')
 api.add_resource(UserAPI, '/users/<int:id>')
+api.add_resource(PostAPI, '/post/<int:post_id>')
 api.add_resource(UserSearchAPI, '/searchusers')
 api.add_resource(TopicListAPI, '/topics')
 api.add_resource(TopicAPI, '/topics/<int:topic_id>')
