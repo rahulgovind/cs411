@@ -100,5 +100,14 @@ def insert(table, columns, values):
     return execute(query)
 
 
+def create(table, columns, values):
+    query_result = insert(table, columns, values)
+    last_id = None
+    if query_result > 0:
+        last_id = fit(fetch("SELECT LAST_INSERT_ID()"),
+                      ('last_id',))[0]['last_id']
+    return query_result, last_id
+
+
 if __name__ == "__main__":
     pass

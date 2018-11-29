@@ -37,6 +37,8 @@ parser.add_argument("topic", type=str, help="Topic must be a string")
 parser.add_argument("description", type=str, help="Description must be a "
                                                   "string")
 parser.add_argument("token", type=str, help="Token must be a string")
+parser.add_argument("topics", type=str, help="Topics must be a "
+                                             "comma-separated list of topics")
 
 
 def auth(f):
@@ -127,8 +129,20 @@ class PostListAPI(Resource):
             modified, last_id = Post.create(args)
             result = dict(success=modified > 0)
             if modified:
-                print(last_id)
                 result['post'] = Post.find(last_id[0]['last_id'])
+                last_id = last_id[0]['last_id']
+
+                topics = args['topics']
+                topic_obj = []
+                print(topics)
+                for topic in topics.split(','):
+                    topic = topic.strip()
+                    r = Topic.get_create_new(topic)
+                    if r is None:
+                        raise Exception("Unable to create topic")
+                    topic_obj.append(r)
+                    Post.add_topic(last_id, {'topic_id': r['topic_id']})
+                result['topics'] = topic_obj
             return result
         except Exception as e:
             return dict(success=False, message=str(e))

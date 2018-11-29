@@ -1,4 +1,4 @@
-from db import fetch, execute, update, delete, fit, select, insert
+from db import fetch, execute, update, delete, fit, select, insert, create
 from MySQLdb import escape_string as mysql_escape_string
 import bcrypt
 
@@ -294,10 +294,25 @@ class Topic(object):
 
     @staticmethod
     def create(fields):
-        return insert(table="topics",
+        return create(table="topics",
                       columns=("topic", "description"),
                       values=[quote_string(fields['topic']),
                               quote_string(fields['description'])])
+
+    @staticmethod
+    def get_create_new(topic):
+        r = select(table='topics',
+                   columns=('topic_id', 'topic', 'description'),
+                   condition='topic=%s' % quote_string(topic))
+        if len(r) == 0:
+            _, last_id = Topic.create({'topic': topic,
+                                       'description': 'New Topic'})
+            r = [Topic.find(last_id)]
+
+        if len(r) == 0:
+            return None
+        else:
+            return r[0]
 
     @staticmethod
     def delete(topic_id):
