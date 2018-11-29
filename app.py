@@ -124,7 +124,11 @@ class PostAPI(Resource):
 
 class PostListAPI(Resource):
     def get(self):
-        return Post.fetch_all()
+        posts = Post.fetch_all()
+        if len(posts) > 0:
+            for post in posts:
+                post['topics'] = Post.fetch_topics(post['post_id'])
+        return posts
 
     def post(self):
         args = parser.parse_args()
