@@ -134,7 +134,6 @@ class PostListAPI(Resource):
             if modified:
                 result['post'] = Post.find(last_id[0]['last_id'])
                 last_id = last_id[0]['last_id']
-                PostList
                 topics = args['topics']
                 topic_obj = []
                 print(topics)
