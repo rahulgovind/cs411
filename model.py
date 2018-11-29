@@ -96,10 +96,9 @@ class User(object):
     @staticmethod
     def following(user_id):
         return fit(fetch("""SELECT u2.user_id,u2.username
-                        FROM users u1
-                        JOIN followers f ON u1.user_id=f.follower_id
-                                            AND u1.user_id={}
+                        FROM followers f
                         JOIN users u2 ON f.follows_id=u2.user_id
+                          AND f.follower_id={}
                         """.format(user_id)),
                    ('user_id', 'username'))
 
@@ -107,10 +106,9 @@ class User(object):
     def followers(user_id):
         return fit(fetch("""
                         SELECT u2.user_id,u2.username
-                        FROM users u1
-                        JOIN followers f ON u1.user_id=f.follows_id
-                                            AND u1.user_id={}
+                        FROM followers f
                         JOIN users u2 ON f.follower_id=u2.user_id
+                          AND f.follows_id={}
                         """.format(user_id)),
                    ('user_id', 'username'))
 
@@ -120,11 +118,10 @@ class User(object):
         Fetch posts a user likes
         """
         return fit(fetch("""SELECT p.post_id,p.title,p.content,p.user_id
-                            FROM users u
-                            JOIN user_likes_post ulp
-                            ON u.user_id = ulp.post_id AND u.user_id={}
+                            FROM user_likes_post ulp
                             JOIN posts p
-                            ON ulp.post_id = p.post_id""".format(user_id)),
+                            ON ulp.post_id = p.post_id
+                              AND ulp.user_id={}""".format(user_id)),
                    ('post_id', 'title', 'content', 'user_id'))
 
     @staticmethod
@@ -194,11 +191,10 @@ class Post(object):
     @staticmethod
     def fetch_topics(post_id):
         return fit(fetch("""SELECT t.topic_id, t.topic, t.description
-                            FROM posts p
-                            JOIN post_topic pt
-                            ON p.post_id = pt.post_id AND p.post_id={}
+                            FROM post_topic pt
                             JOIN topics t
-                            ON pt.topic_id = t.topic_id""".format(post_id)),
+                            ON pt.topic_id = t.topic_id
+                              AND pt.post_id={}""".format(post_id)),
                    ('topic_id', 'topic', 'description'))
 
     @staticmethod
@@ -221,12 +217,10 @@ class Post(object):
         Fetch users that like a given post
         """
         return fit(fetch("""SELECT u.user_id,u.username
-                            FROM posts p
-                            JOIN user_likes_post ulp
-                            ON p.post_id=ulp.post_id
-                            AND p.post_id={}
+                            FROM user_likes_post ulp
                             JOIN users u
-                            ON ulp.user_id=u.user_id""".format(post_id)),
+                            ON ulp.user_id=u.user_id
+                              and ulp.post_id={}""".format(post_id)),
                    ('user_id', 'username'))
 
 

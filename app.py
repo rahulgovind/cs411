@@ -364,6 +364,31 @@ class SearchAPI(Resource):
         return fit(r, ('post_id', 'title', 'description', 'content'))
 
 
+class RecommendationsAPI(Resource):
+    def get(self, user_id):
+        return fit(fetch("""SELECT a.post_id, title, description, content
+                FROM (
+                     SELECT p.post_id
+                     FROM followers f
+                     JOIN users u ON f.follows_id=u.user_id AND
+                     f.follower_id={0}
+                     JOIN user_likes_post ulp ON ulp.user_id=f.follows_id
+                     JOIN (
+                          SELECT post_id
+                          FROM posts
+                          WHERE post_id NOT IN (SELECT post_id
+                                FROM user_likes_post ulp2
+                                WHERE ulp2.user_id={0}
+                            )
+                        ) p
+                     ON ulp.post_id=p.post_id
+                     GROUP BY post_id
+                     ORDER BY COUNT(*) DESC
+                ) a
+                JOIN posts p
+                ON a.post_id = p.post_id
+                """.format(user_id)),
+                   ('post_id', 'title', 'description', 'content'))
 
 
 api.add_resource(UserListAPI, '/users')
@@ -383,3 +408,4 @@ api.add_resource(FollowersAPI, '/followers/<int:user_id>')
 api.add_resource(UserPostLikes, '/user-post-likes/<int:user_id>')
 api.add_resource(PostUserLikes, '/post-user-likes/<int:post_id>')
 api.add_resource(SearchAPI, '/search')
+api.add_resource(RecommendationsAPI, '/recommend/<int:user_id>')
