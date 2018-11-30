@@ -319,7 +319,7 @@ class FollowsAPI(Resource):
     def delete(self, user_id):
         args = parser.parse_args()
         try:
-            modified = Post.delete_topic(user_id, args['follows_id'])
+            modified = User.unfollow(user_id, args['follows_id'])
             return dict(success=modified > 0)
         except Exception as e:
             return dict(success=False, message=str(e))

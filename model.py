@@ -92,10 +92,10 @@ class User(object):
                       values=[user_id, follows_id])
 
     @staticmethod
-    def unfollow(user_id, args):
+    def unfollow(user_id, follows_id):
         return delete(table="followers",
                       condition="follower_id={} AND follows_id={}".format(
-                          user_id, args['following_id']
+                          user_id, follows_id
                       ))
 
     @staticmethod
