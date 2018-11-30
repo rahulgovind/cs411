@@ -87,7 +87,9 @@ class UserAPI(Resource):
 
 class UserListAPI(Resource):
     def get(self):
-        return User.fetch_all()
+        args = parser.parse_args()
+        user_id = -1 if args['user_id'] is None else args['user_id']
+        return User.fetch_all(user_id)
 
     def post(self):
         args = parser.parse_args()
@@ -126,7 +128,9 @@ class PostAPI(Resource):
 
 class PostListAPI(Resource):
     def get(self):
-        posts = Post.fetch_all()
+        args = parser.parse_args()
+        user_id = -1 if args['user_id'] is None else args['user_id']
+        posts = Post.fetch_all(user_id)
         if len(posts) > 0:
             for post in posts:
                 post['topics'] = Post.fetch_topics(post['post_id'])

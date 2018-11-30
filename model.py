@@ -5,9 +5,14 @@ import bcrypt
 
 class User(object):
     @staticmethod
-    def fetch_all():
-        return select(table='users',
-                      columns=('user_id', 'username', 'bio', 'join_date'))
+    def fetch_all(user_id):
+        return fit(fetch("SELECT user_id,username,bio,join_date,"
+                         "IF(f.follows_id IS NULL, 0, 1) AS follows "
+                         "FROM users u "
+                         "LEFT JOIN followers f "
+                         "ON f.follower_id={} "
+                         "AND f.follows_id=u.user_id".format(user_id)),
+                   ('user_id', 'username', 'bio', 'join_date', 'follows'))
 
     @staticmethod
     def find(id):
@@ -140,11 +145,16 @@ class User(object):
 
 class Post(object):
     @staticmethod
-    def fetch_all():
-        return fit(fetch("SELECT post_id, content, created, user_id, "
-                         "description, title FROM posts"),
+    def fetch_all(user_id):
+        return fit(fetch("SELECT p.post_id, content, created, p.user_id, "
+                         "description, title, "
+                         "IF(ulp.post_id IS NULL, 0, 1) as likedBy "
+                         "FROM posts p "
+                         "LEFT JOIN user_likes_post ulp "
+                         "ON ulp.user_id={} "
+                         "AND p.post_id=ulp.post_id".format(user_id)),
                    ('post_id', 'content', 'created', 'user_id',
-                    'description', 'title'))
+                    'description', 'title', 'likedBy'))
 
     @staticmethod
     def find(post_id):
