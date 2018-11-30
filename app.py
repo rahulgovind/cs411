@@ -336,7 +336,13 @@ class SearchAPI(Resource):
         query = args['query']
         words = [x.strip().lower() for x in query.split()]
         words = list(set(words))
-        words = [word for word in words if word not in stopwords]
+        if len(words) == 0:
+            return []
+
+        tentative = [word for word in words if word not in stopwords]
+        if len(tentative) > 0:
+            words = tentative
+
         word_values = ",".join(["({})".format(quote_string(_))
                                 for _ in words])
         non_pk_cols = ','.join(['title', 'description', 'content'])
