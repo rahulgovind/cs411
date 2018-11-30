@@ -415,14 +415,14 @@ class RecommendationsAPI(Resource):
                            ORDER BY COUNT(*) DESC
                     );
                     SELECT p.post_id, title, description, content, total_score FROM (
-                           SELECT a.post_id, 10 * a.score + b.score AS total_score
+                           SELECT a.post_id, 10 * a.score + IFNULL(b.score, 0) AS total_score
                            FROM collab_score a
-                           JOIN follow_score b
+                           LEFT JOIN follow_score b
                            ON a.post_id=b.post_id
-                           ORDER BY total_score
                     ) c
                     JOIN posts p
-                    ON c.post_id=p.post_id;
+                    ON c.post_id=p.post_id
+                    ORDER BY total_score DESC;
                 """.format(user_id), multi=True),
                    ('post_id', 'title', 'description', 'content',
                     'total_score'))
