@@ -100,22 +100,22 @@ class User(object):
 
     @staticmethod
     def following(user_id):
-        return fit(fetch("""SELECT u2.user_id,u2.username
+        return fit(fetch("""SELECT u2.user_id,u2.username,u2.bio
                         FROM followers f
                         JOIN users u2 ON f.follows_id=u2.user_id
                           AND f.follower_id={}
                         """.format(user_id)),
-                   ('user_id', 'username'))
+                   ('user_id', 'username', 'bio'))
 
     @staticmethod
     def followers(user_id):
         return fit(fetch("""
-                        SELECT u2.user_id,u2.username
+                        SELECT u2.user_id,u2.username,u2.bio
                         FROM followers f
                         JOIN users u2 ON f.follower_id=u2.user_id
                           AND f.follows_id={}
                         """.format(user_id)),
-                   ('user_id', 'username'))
+                   ('user_id', 'username', 'bio'))
 
     @staticmethod
     def fetch_like_posts(user_id):
