@@ -14,7 +14,7 @@ CREATE TABLE posts (
 	   content TEXT NOT NULL,
 	   created TIMESTAMP,
 	   user_id INT(10) UNSIGNED NOT NULL,
-	   post_id VARCHAR(80),
+	   description VARCHAR(80),
 	   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
