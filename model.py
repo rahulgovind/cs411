@@ -286,7 +286,7 @@ class Topic(object):
     def get_create_new(topic):
         r = select(table='topics',
                    columns=('topic_id', 'topic', 'description'),
-                   condition='topic=%s' % quote_string(topic))
+                   condition='topic=LOWER(%s)' % quote_string(topic.lower()))
         if len(r) == 0:
             _, last_id = Topic.create({'topic': topic,
                                        'description': 'New Topic'})

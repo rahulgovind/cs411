@@ -12,7 +12,7 @@ import datetime
 from flask_cors import CORS
 
 from db import fetch, quote_string, fit
-
+from stopwords import stopwords
 
 class Config(object):
     RESTFUL_JSON = {'cls': JSONEncoder}
@@ -331,6 +331,8 @@ class SearchAPI(Resource):
         args = parser.parse_args()
         query = args['query']
         words = [x.strip().lower() for x in query.split()]
+        words = list(set(words))
+        words = [word for word in words if word not in stopwords]
         word_values = ",".join(["({})".format(quote_string(_))
                                 for _ in words])
         non_pk_cols = ','.join(['title', 'description', 'content'])
@@ -341,7 +343,7 @@ class SearchAPI(Resource):
             CREATE TEMPORARY TABLE words2(word VARCHAR(40));
             INSERT INTO words VALUES {1};
             INSERT INTO words2 VALUES {1};
-            SELECT post_id, {0}
+            SELECT post_id, {0}, MAX(tf_idf)
             FROM (
                 SELECT post_id, {0}, word, LOG((SELECT COUNT(*) FROM posts) / (doc_freq + 0.1)) * tf as tf_idf
                 FROM (
@@ -358,10 +360,11 @@ class SearchAPI(Resource):
                     ON w.word = tf.word
                 ) as d
             ) AS a
+            WHERE tf_idf >= 1.0
             GROUP BY post_id
             ORDER BY MAX(tf_idf) DESC;""".format(non_pk_cols, word_values),
                   multi=True)
-        posts = fit(r, ('post_id', 'title', 'description', 'content'))
+        posts = fit(r, ('post_id', 'title', 'description', 'content', 'tf_idf'))
         for post in posts:
             post['topics'] = Post.fetch_topics(post['post_id'])
         return posts
