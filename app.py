@@ -349,7 +349,7 @@ class SearchAPI(Resource):
             INSERT INTO words2 VALUES {1};
             SELECT post_id, {0}, MAX(tf_idf)
             FROM (
-                SELECT post_id, {0}, word, LOG((SELECT COUNT(*) FROM posts) / (doc_freq + 0.1)) * tf as tf_idf
+                SELECT post_id, {0}, word, LOG(((SELECT COUNT(*) FROM posts)  + 1) / (doc_freq)) * tf as tf_idf
                 FROM (
                     SELECT p.post_id, {0}, w.word, IFNULL(doc_freq,0) as doc_freq,
                            ROUND((LENGTH(p.content) - LENGTH(REPLACE(LOWER(p.content), w.word, ""))) / LENGTH(w.word)) AS tf
@@ -364,7 +364,6 @@ class SearchAPI(Resource):
                     ON w.word = tf.word
                 ) as d
             ) AS a
-            WHERE tf_idf >= 1.0
             GROUP BY post_id
             ORDER BY MAX(tf_idf) DESC;""".format(non_pk_cols, word_values),
                   multi=True)
